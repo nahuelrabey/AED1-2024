@@ -54,6 +54,56 @@ public class ABB<T extends Comparable<T>> implements Conjunto<T> {
             return this.val;
         }
 
+        public boolean tieneHijoDer(){
+            return this.der != null;
+        }
+        public boolean tieneHijoIzq(){
+            return this.izq != null;
+        }
+        public boolean tieneHijos(){
+            return this.tieneHijoIzq() || this.tieneHijoDer();
+        }
+
+        public boolean tienePadre(){
+            return this.padre != null;
+        }
+        public boolean esDer(){
+            return tienePadre() && this.padre.der == this;
+        }
+        public boolean esIzq(){
+            return tienePadre() && this.padre.izq == this;
+        }
+        public Nodo hermanoDerecho(){
+            return this.padre.der;
+        }
+        public Nodo hermanoIzq(){
+            return this.padre.izq;
+        }
+
+        public Nodo padreMayor(){
+            T value = this.getValue();
+            Nodo padre = this;
+            while(padre.tienePadre()){
+                padre = padre.getPadre();
+                T p_value = padre.getValue();
+
+                if (p_value.compareTo(value) > 0){
+                    return padre;
+                }
+            }
+            return null;
+        }
+        public boolean tienePadreMayor(){
+            if(!this.tienePadre()){
+                return false;
+            }
+
+            // while(true){
+
+            // }
+
+            return false;
+        }
     }
     public boolean sonNodosIguales(Nodo A, Nodo B){
         T valueA = A.getValue();
@@ -97,12 +147,12 @@ public class ABB<T extends Comparable<T>> implements Conjunto<T> {
         return actual.getValue();
     }
 
-    public T minimo(Nodo n){
+    public Nodo nodo_minimo(Nodo n){
         Nodo actual = n;
         while (actual.getIzq() != null){
             actual = actual.getIzq();
         }
-        return actual.getValue();
+        return actual;
     }
 
     public T maximo(){
@@ -112,12 +162,12 @@ public class ABB<T extends Comparable<T>> implements Conjunto<T> {
         }
         return actual.getValue();
     }
-    public T maximo(Nodo n){
+    public Nodo nodo_maximo(Nodo n){
         Nodo actual = n;
         while (actual.getDer() != null){
             actual = actual.getDer();
         }
-        return actual.getValue();
+        return actual;
     }
 
     public void insertar(T elem){
@@ -194,65 +244,205 @@ public class ABB<T extends Comparable<T>> implements Conjunto<T> {
         Nodo buscado = this.buscar(elem);
         Nodo padre = buscado.getPadre();
 
-        Nodo hermanoIzq = padre.getIzq();
-        Nodo hermanoDer = padre.getDer();
-
         Nodo hijoIzq = buscado.getIzq();
         Nodo hijoDer = buscado.getDer();
 
-        if (hijoIzq == null && hijoDer == null){
-            if (hermanoIzq.getValue() == buscado.getValue()){
+
+        // no tiene hijos
+        if(!buscado.tieneHijos()){
+            if (buscado.esIzq()){
                 // es el hermano izquierdo
                 padre.setIzq(null);
             }
-            if (hermanoDer.getValue() == buscado.getValue()){
+            if (buscado.esDer()){
+                // es el hermano derecho
                 padre.setDer(null);
             }
         }
-
         // sólo tiene rama izq
-        if (hijoDer == null && hijoIzq != null){
-            if (hermanoIzq.getValue() == buscado.getValue()){
+        if (buscado.tieneHijoIzq() && !buscado.tieneHijoDer()){
+            if (buscado.esIzq()){
                 // es el hermano izquierdo
                 padre.setIzq(hijoIzq);
             }
-            if (hermanoDer.getValue() == buscado.getValue()){
+            if (buscado.esDer()){
                 // es el hermano derecho;
                 padre.setDer(hijoIzq);
             }
         }
 
         // sólo tiene rama der
-        if (hijoDer == null && hijoIzq != null){
-            if (hermanoIzq.getValue() == buscado.getValue()){
+        if (!buscado.tieneHijoIzq() && buscado.tieneHijoDer()){
+            if (buscado.esIzq()){
                 // es el hermano izquierdo
                 padre.setIzq(hijoDer);
             }
-            if (hermanoDer.getValue() == buscado.getValue()){
+            if (buscado.esDer()){
                 // es el hermano derecho;
                 padre.setDer(hijoDer);
             }
         }
+
+
+        // tiene ambas ramas
+        // busco mínimo de la derecha
+        Nodo minDer = this.nodo_minimo(hijoDer);
+        buscado.setValue(minDer.getValue());
+
+        if (minDer.esDer()){
+            minDer.getPadre().setDer(null);
+        }
+        if (minDer.esIzq()){
+            minDer.getPadre().setIzq(null);
+        }
+
+        this.cardinal --;
     }
 
     public String toString(){
-        throw new UnsupportedOperationException("No implementada aun");
+        Nodo minimo = nodo_minimo(this.raiz);
+        T value = minimo.getValue();
+        ABB<T>.ABB_Iterador_mio iterador = new ABB_Iterador_mio(minimo);
+        String res = "{";
+        while (iterador.haySiguiente()){
+            res+=value.toString() + ",";
+            value = iterador.siguiente();
+            System.out.println("current value: " +value);
+        }
+        res += value+"}";
+        return res;
     }
 
-    private class ABB_Iterador implements Iterador<T> {
+    private class ABB_Iterador_mio implements Iterador<T> {
         private Nodo _actual;
+        private Nodo _siguiente;
+        // private Nodo[] lista;
 
-        public boolean haySiguiente() {            
-            throw new UnsupportedOperationException("No implementada aun");
+        ABB_Iterador_mio(Nodo n){
+            // acá, voy a armar una lista en orden de todo lo que hay
+            _actual = n;
+        }
+
+        public boolean haySiguiente() {
+            if(_actual == null){
+                return false;
+            }
+
+            if (_actual.tieneHijoDer()){
+                return true;
+            }
+            // if (_actual.tienePadre()){
+            // }
+            Nodo padreMayor = _actual.padreMayor();
+            if (padreMayor == null){
+                return false;
+            }
+            return true;
+            
+            // return false;
         }
     
         public T siguiente() {
-            throw new UnsupportedOperationException("No implementada aun");
+            if (_actual == null){
+                return null;
+            }
+
+            // T value = _actual.getValue();
+
+            if (_actual.tieneHijoDer()){
+                Nodo minimo = nodo_minimo(_actual.getDer());
+                _actual = minimo;
+                T value = _actual.getValue();
+                return value;
+            }
+
+            Nodo padreMayor = _actual.padreMayor();
+            if (padreMayor == null){
+                return null;
+            }
+
+            _actual = padreMayor;
+            T value = _actual.getValue();
+
+            return value;
         }
     }
+    private class ABB_Iterador implements Iterador<T> {
+        private Nodo _actual;
+        private Nodo _siguiente;
+        // private Nodo[] lista;
 
+        ABB_Iterador(Nodo n){
+            // acá, voy a armar una lista en orden de todo lo que hay
+            _actual = n;
+        }
+
+        public boolean haySiguiente() {
+            if(_actual == null){
+                return false;
+            }
+
+            if (_actual.tieneHijoDer()){
+                return true;
+            }
+            // if (_actual.tienePadre()){
+            // }
+            Nodo padreMayor = _actual.padreMayor();
+            if (padreMayor == null){
+                return false;
+            }
+            return true;
+            
+            // return false;
+        }
+    
+        public T siguiente() {
+            if (_actual == null){
+                return null;
+            }
+
+            T value = _actual.getValue();
+
+            if (_actual.tieneHijoDer()){
+                Nodo minimo = nodo_minimo(_actual.getDer());
+                _actual = minimo;
+                return value;
+            }
+
+            Nodo padreMayor = _actual.padreMayor();
+            if (padreMayor == null){
+                return null;
+            }
+
+            _actual = padreMayor;
+
+            return value;
+        }
+    }
     public Iterador<T> iterador() {
-        return new ABB_Iterador();
+        Nodo minimo = nodo_minimo(raiz);
+        return new ABB_Iterador(minimo);
     }
 
+    public static void main(String[] args){
+        ABB<Integer> conjunto = new ABB<Integer>();
+        
+        conjunto.insertar(5);
+        conjunto.insertar(4);
+        conjunto.insertar(20);
+        conjunto.insertar(15);
+        conjunto.insertar(12);
+        conjunto.insertar(24);
+        conjunto.insertar(22);
+        conjunto.insertar(25);
+        conjunto.insertar(19);
+        conjunto.insertar(21);
+        conjunto.eliminar(20);
+        System.out.println(conjunto.cardinal());
+        System.out.println(conjunto.minimo());
+        System.out.println(conjunto.maximo());
+        System.out.println(conjunto.toString());
+        // assertEquals("{4,5,12,15,19,21,22,24,25}", conjunto.toString());
+
+    }
 }

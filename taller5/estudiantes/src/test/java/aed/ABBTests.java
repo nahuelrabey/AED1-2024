@@ -271,5 +271,31 @@ class ABBTests {
 
     }
 
+    public static Integer clave1(Integer i, Integer NCLAVES) {        
+        return NCLAVES * ((i * i - 100 * i) % NCLAVES) + i;
+    }
+    public static void main(String[] args){
+        
+        Integer NCLAVES = 1000;
+        ABB<Integer> conjunto = new ABB<Integer>();
 
+        for (Integer i = 0; i < NCLAVES; i++ ){
+            Integer k = clave1(i,NCLAVES);
+            // assertEquals(i, conjunto.cardinal());
+            // assertEquals(false, conjunto.pertenece(k));
+            conjunto.insertar(k);
+            // assertEquals(true, conjunto.pertenece(k));
+        }
+        assertEquals(NCLAVES, conjunto.cardinal());
+
+        for (Integer i = 0; i < NCLAVES; i++) {
+            Integer k = clave1(i,NCLAVES);
+            // assertEquals(true, conjunto.pertenece(k));
+            if (i % 2 == 0) {
+                conjunto.eliminar(k);
+                // assertEquals(false, conjunto.pertenece(k));
+            }
+        }
+        System.out.println("FIN");
+    }
 }
